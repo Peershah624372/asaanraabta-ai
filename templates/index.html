@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta name="theme-color" content="#0f172a"/>
+  <title>AsaanRaabta AI</title>
+  <link rel="manifest" href="/static/manifest.json"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:        #0f172a;
+      --surface:   #1e293b;
+      --surface2:  #263348;
+      --accent:    #38bdf8;
+      --accent2:   #0ea5e9;
+      --green:     #22c55e;
+      --red:       #ef4444;
+      --gold:      #fbbf24;
+      --text:      #f1f5f9;
+      --muted:     #94a3b8;
+      --border:    #334155;
+      --radius:    14px;
+      --font:      'Inter', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    /* ── Phone frame ─────────────────────────────────────────── */
+    #app {
+      width: 100%;
+      max-width: 420px;
+      min-height: 100vh;
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 0 60px rgba(0,0,0,0.6);
+    }
+
+    /* ── Header ──────────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #0c4a6e 0%, #0f172a 100%);
+      padding: 14px 16px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo-circle {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+      box-shadow: 0 0 12px rgba(56,189,248,0.4);
+    }
+    .header-info h1 {
+      font-size: 16px; font-weight: 700; color: var(--text);
+      letter-spacing: -0.3px;
+    }
+    .header-info p {
+      font-size: 11px; color: var(--accent);
+      display: flex; align-items: center; gap: 5px;
+    }
+    .online-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse-dot 1.8s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+    .btn-reset {
+      margin-left: auto;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-reset:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Agent Trace Console ─────────────────────────────────── */
+    #trace-box {
+      background: #0a0f1a;
+      border-bottom: 1px solid var(--border);
+      padding: 8px 12px;
+      max-height: 90px;
+      overflow-y: auto;
+      font-size: 10.5px;
+      font-family: 'Courier New', monospace;
+      color: #4ade80;
+      line-height: 1.6;
+    }
+    #trace-box:empty::before {
+      content: '> Antigravity Orchestrator ready. Awaiting input...';
+      color: #334155;
+    }
+
+    /* ── Chat area ───────────────────────────────────────────── */
+    #chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ── Bubbles ─────────────────────────────────────────────── */
+    .bubble-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .bubble-row.user  { flex-direction: row-reverse; }
+    .avatar {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .avatar.ai   { background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+    .avatar.user { background: #334155; }
+
+    .bubble {
+      max-width: 78%;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 13.5px;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+    .bubble.ai {
+      background: var(--surface2);
+      border-bottom-left-radius: 4px;
+      color: var(--text);
+    }
+    .bubble.user {
+      background: linear-gradient(135deg, var(--accent2), #0284c7);
+      border-bottom-right-radius: 4px;
+      color: #fff;
+    }
+
+    /* markdown inside bubbles */
+    .bubble strong { color: var(--accent); font-weight: 600; }
+    .bubble em     { color: var(--muted);  font-style: normal; font-size: 12px; }
+
+    /* ── Provider Card ───────────────────────────────────────── */
+    .provider-card {
+      background: linear-gradient(135deg, #0c4a6e22, #0f172a88);
+      border: 1px solid var(--accent2);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-top: 6px;
+    }
+    .card-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+    }
+    .card-icon {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .card-name   { font-size: 15px; font-weight: 700; }
+    .card-sub    { font-size: 11px; color: var(--accent); margin-top: 2px; }
+    .card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .card-stat {
+      background: #0f172a;
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+    .card-stat .label { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+    .card-stat .value { font-size: 13px; font-weight: 600; }
+    .card-stat .value.gold  { color: var(--gold); }
+    .card-stat .value.green { color: var(--green); }
+    .card-stat .value.blue  { color: var(--accent); }
+
+    .btn-book {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--green), #16a34a);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn-book:hover   { opacity: 0.9; }
+    .btn-book:active  { transform: scale(0.98); }
+    .btn-book:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Booking Receipt ─────────────────────────────────────── */
+    .receipt {
+      background: #0a0f1a;
+      border: 1px solid var(--green);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-top: 6px;
+    }
+    .receipt-header {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 12px;
+    }
+    .receipt-header .tick {
+      width: 32px; height: 32px;
+      background: var(--green);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .receipt-header h3 { font-size: 14px; font-weight: 700; color: var(--green); }
+    .receipt-row {
+      display: flex; justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid #1e293b;
+      font-size: 12px;
+    }
+    .receipt-row:last-child { border-bottom: none; }
+    .receipt-row .rk { color: var(--muted); }
+    .receipt-row .rv { font-weight: 600; color: var(--text); }
+    .receipt-id {
+      text-align: center;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+    }
+
+    /* ── Typing indicator ────────────────────────────────────── */
+    .typing {
+      display: flex; align-items: center; gap: 5px;
+      padding: 10px 14px;
+      background: var(--surface2);
+      border-radius: var(--radius);
+      border-bottom-left-radius: 4px;
+      width: fit-content;
+    }
+    .typing span {
+      width: 7px; height: 7px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.15s; }
+    .typing span:nth-child(3) { animation-delay: 0.30s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40%           { transform: translateY(-6px); }
+    }
+
+    /* ── Quick chips ─────────────────────────────────────────── */
+    #chips {
+      display: flex;
+      gap: 6px;
+      padding: 8px 12px 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    #chips::-webkit-scrollbar { display: none; }
+    .chip {
+      white-space: nowrap;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 11.5px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: #0c4a6e33;
+    }
+
+    /* ── Input bar ───────────────────────────────────────────── */
+    #input-bar {
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 10px 12px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+    #user-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 10px 16px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: var(--font);
+      resize: none;
+      max-height: 100px;
+      outline: none;
+      transition: border-color 0.2s;
+      line-height: 1.4;
+    }
+    #user-input:focus     { border-color: var(--accent); }
+    #user-input::placeholder { color: var(--muted); }
+    #send-btn {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: opacity 0.2s, transform 0.1s;
+      box-shadow: 0 0 12px rgba(56,189,248,0.3);
+    }
+    #send-btn:hover  { opacity: 0.9; }
+    #send-btn:active { transform: scale(0.93); }
+    #send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── User name bar (first visit) ──────────────────────────── */
+    #name-bar {
+      background: #0c4a6e33;
+      border-bottom: 1px solid var(--border);
+      padding: 8px 12px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    #name-bar label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+    #name-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+    }
+    #name-input:focus { border-color: var(--accent); }
+
+    /* scrollbar */
+    #chat-messages::-webkit-scrollbar { width: 4px; }
+    #chat-messages::-webkit-scrollbar-track { background: transparent; }
+    #chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <header>
+    <div class="logo-circle">🤖</div>
+    <div class="header-info">
+      <h1>AsaanRaabta AI</h1>
+      <p><span class="online-dot"></span>Antigravity Orchestrator · Online</p>
+    </div>
+    <button class="btn-reset" onclick="resetChat()">↺ Reset</button>
+  </header>
+
+  <!-- Agent Trace Console -->
+  <div id="trace-box"></div>
+
+  <!-- User Name Bar -->
+  <div id="name-bar">
+    <label>Aapka naam:</label>
+    <input id="name-input" type="text" placeholder="Naam likhen..." maxlength="30" value="User"/>
+  </div>
+
+  <!-- Quick Chips -->
+  <div id="chips">
+    <div class="chip" onclick="sendChip('AC technician chahiye Barrage Colony mein subah')">🌬️ AC Technician</div>
+    <div class="chip" onclick="sendChip('Plumber chahiye Gharibabad mein')">🔧 Plumber</div>
+    <div class="chip" onclick="sendChip('Electrician chahiye Old Sukkur mein shaam ko')">⚡ Electrician</div>
+    <div class="chip" onclick="sendChip('Tutor chahiye Township mein 10am')">📚 Tutor</div>
+    <div class="chip" onclick="sendChip('Home nurse chahiye Barrage Colony mein')">💉 Home Nurse</div>
+  </div>
+
+  <!-- Messages -->
+  <div id="chat-messages">
+    <!-- Welcome message injected by JS -->
+  </div>
+
+  <!-- Input -->
+  <div id="input-bar">
+    <textarea id="user-input" rows="1"
+      placeholder="Service likhein... (Urdu / Roman Urdu / English)"
+      onkeydown="handleKey(event)"
+      oninput="autoResize(this)"></textarea>
+    <button id="send-btn" onclick="sendMessage()" title="Send">➤</button>
+  </div>
+
+</div>
+
+<script>
+// ─── State ──────────────────────────────────────────────────────────
+let currentProvider = null;
+
+// ─── Init ────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  addBubble('ai',
+    '**Assalam o Alaikum! 👋**\n\n' +
+    'Main **AsaanRaabta AI** hoon — Sukkur ka AI service orchestrator.\n\n' +
+    'Kaunsi service chahiye?\n' +
+    '🌬️ AC Technician · ⚡ Electrician · 🔧 Plumber · 📚 Tutor · 💉 Home Nurse\n\n' +
+    '*Urdu, Roman Urdu ya English mein likhein.*'
+  );
+});
+
+// ─── Send ────────────────────────────────────────────────────────────
+function sendMessage() {
+  const input = document.getElementById('user-input');
+  const msg   = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  autoResize(input);
+  _send(msg);
+}
+
+function sendChip(text) { _send(text); }
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function _send(msg) {
+  addBubble('user', msg);
+  showTyping();
+  document.getElementById('send-btn').disabled = true;
+
+  const userName = document.getElementById('name-input').value.trim() || 'User';
+
+  fetch('/chat', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ message: msg, user_name: userName })
+  })
+  .then(r => r.json())
+  .then(data => {
+    removeTyping();
+    document.getElementById('send-btn').disabled = false;
+
+    updateTrace(data.logs || []);
+
+    if (data.error) {
+      addBubble('ai', '❌ ' + data.error);
+      return;
+    }
+
+    if (data.is_chat || !data.provider) {
+      addBubble('ai', data.message || '');
+      return;
+    }
+
+    // Provider card
+    currentProvider = data.provider;
+    addBubble('ai', data.message || '');
+    addProviderCard(data.provider);
+  })
+  .catch(err => {
+    removeTyping();
+    document.getElementById('send-btn').disabled = false;
+    addBubble('ai', '⚠️ Connection error. App restart karein.');
+    console.error(err);
+  });
+}
+
+// ─── Booking ─────────────────────────────────────────────────────────
+function confirmBooking(provider) {
+  const btn      = document.getElementById('book-btn-' + provider.id);
+  const userName = document.getElementById('name-input').value.trim() || 'User';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Booking...'; }
+
+  addBubble('user', `✅ Booking confirm karein: ${provider.name}`);
+  showTyping();
+
+  fetch('/book', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ provider, user_name: userName })
+  })
+  .then(r => r.json())
+  .then(data => {
+    removeTyping();
+    updateTrace(data.logs || []);
+
+    if (data.error) {
+      addBubble('ai', '❌ Booking failed: ' + data.error);
+      if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Booking'; }
+      return;
+    }
+    addBookingReceipt(data);
+  })
+  .catch(err => {
+    removeTyping();
+    addBubble('ai', '⚠️ Booking error. Dobara try karein.');
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Booking'; }
+    console.error(err);
+  });
+}
+
+// ─── Reset ───────────────────────────────────────────────────────────
+function resetChat() {
+  fetch('/reset', { method: 'POST' })
+    .then(() => {
+      document.getElementById('chat-messages').innerHTML = '';
+      document.getElementById('trace-box').innerHTML     = '';
+      currentProvider = null;
+      addBubble('ai',
+        '**Chat reset ho gayi! 🔄**\n\nKaunsi service chahiye? AC, Plumber, Electrician, Tutor, ya Home Nurse?'
+      );
+    });
+}
+
+// ─── DOM helpers ─────────────────────────────────────────────────────
+function addBubble(role, text) {
+  const box  = document.getElementById('chat-messages');
+  const row  = document.createElement('div');
+  row.className = `bubble-row ${role}`;
+
+  const av = document.createElement('div');
+  av.className = `avatar ${role}`;
+  av.textContent = role === 'ai' ? '🤖' : '👤';
+
+  const bub = document.createElement('div');
+  bub.className = `bubble ${role}`;
+  bub.innerHTML = markdownToHtml(text);
+
+  row.appendChild(av);
+  row.appendChild(bub);
+  box.appendChild(row);
+  scrollBottom();
+}
+
+function addProviderCard(p) {
+  const box  = document.getElementById('chat-messages');
+  const row  = document.createElement('div');
+  row.className = 'bubble-row ai';
+
+  const av = document.createElement('div');
+  av.className = 'avatar ai';
+  av.textContent = '🤖';
+
+  const serviceEmoji = {
+    'AC Technician': '🌬️', 'Electrician': '⚡',
+    'Plumber': '🔧', 'Tutor': '📚', 'Home Nurse': '💉'
+  };
+  const emoji = serviceEmoji[p.service] || '🛠️';
+
+  const card = document.createElement('div');
+  card.className = 'provider-card';
+  card.innerHTML = `
+    <div class="card-header">
+      <div class="card-icon">${emoji}</div>
+      <div>
+        <div class="card-name">${p.name}</div>
+        <div class="card-sub">${p.service} · ${p.location}</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="card-stat">
+        <div class="label">⭐ Rating</div>
+        <div class="value gold">${p.rating} / 5.0</div>
+      </div>
+      <div class="card-stat">
+        <div class="label">📍 Distance</div>
+        <div class="value blue">${p.distance_km} km</div>
+      </div>
+      <div class="card-stat">
+        <div class="label">🕐 Slot</div>
+        <div class="value green">${p.matched_slot || 'ASAP'}</div>
+      </div>
+      <div class="card-stat">
+        <div class="label">💰 Base Rate</div>
+        <div class="value">Rs. ${p.base_rate}</div>
+      </div>
+      <div class="card-stat">
+        <div class="label">📅 Experience</div>
+        <div class="value">${p.experience_years} yrs</div>
+      </div>
+      <div class="card-stat">
+        <div class="label">📞 Contact</div>
+        <div class="value" style="font-size:11px">${p.contact_number}</div>
+      </div>
+    </div>
+    <button class="btn-book" id="book-btn-${p.id}" onclick='confirmBooking(${JSON.stringify(p)})'>
+      ✅ Confirm Booking
+    </button>
+  `;
+
+  row.appendChild(av);
+  row.appendChild(card);
+  box.appendChild(row);
+  scrollBottom();
+}
+
+function addBookingReceipt(data) {
+  const p   = data.provider;
+  const box = document.getElementById('chat-messages');
+  const row = document.createElement('div');
+  row.className = 'bubble-row ai';
+
+  const av = document.createElement('div');
+  av.className = 'avatar ai';
+  av.textContent = '🤖';
+
+  const receipt = document.createElement('div');
+  receipt.className = 'receipt';
+  receipt.innerHTML = `
+    <div class="receipt-header">
+      <div class="tick">✓</div>
+      <div>
+        <h3>Booking Confirmed!</h3>
+        <div style="font-size:11px;color:var(--muted)">Follow-up scheduled · SMS sent</div>
+      </div>
+    </div>
+    <div class="receipt-row"><span class="rk">Provider</span><span class="rv">${p.name}</span></div>
+    <div class="receipt-row"><span class="rk">Service</span><span class="rv">${p.service}</span></div>
+    <div class="receipt-row"><span class="rk">Location</span><span class="rv">${p.location}</span></div>
+    <div class="receipt-row"><span class="rk">Time Slot</span><span class="rv">${data.booking_time}</span></div>
+    <div class="receipt-row"><span class="rk">Base Rate</span><span class="rv">Rs. ${p.base_rate}</span></div>
+    <div class="receipt-row"><span class="rk">Status</span>
+      <span class="rv" style="color:var(--green)">✅ ${data.status}</span></div>
+    <div class="receipt-row"><span class="rk">Reminder</span><span class="rv">1 hour before</span></div>
+    <div class="receipt-id">Booking ID: ${data.booking_id}</div>
+  `;
+
+  row.appendChild(av);
+  row.appendChild(receipt);
+  box.appendChild(row);
+
+  addBubble('ai',
+    `🎉 **Booking ho gayi!**\n\nAapka appointment **${data.booking_time}** ke liye confirm hai.\n` +
+    `Follow-up reminder 1 ghante pehle bheja jayega. Shukriya!`
+  );
+  scrollBottom();
+}
+
+function showTyping() {
+  const box = document.getElementById('chat-messages');
+  const row = document.createElement('div');
+  row.className = 'bubble-row ai';
+  row.id = 'typing-row';
+
+  const av  = document.createElement('div');
+  av.className = 'avatar ai';
+  av.textContent = '🤖';
+
+  const typ = document.createElement('div');
+  typ.className = 'typing';
+  typ.innerHTML = '<span></span><span></span><span></span>';
+
+  row.appendChild(av);
+  row.appendChild(typ);
+  box.appendChild(row);
+  scrollBottom();
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-row');
+  if (t) t.remove();
+}
+
+function updateTrace(logs) {
+  const box = document.getElementById('trace-box');
+  if (!logs || !logs.length) return;
+  logs.forEach(l => {
+    const line = document.createElement('div');
+    line.textContent = '> ' + l;
+    box.appendChild(line);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+function scrollBottom() {
+  const box = document.getElementById('chat-messages');
+  box.scrollTop = box.scrollHeight;
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+// Simple markdown → HTML (bold, italic, newlines)
+function markdownToHtml(text) {
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,   '<em>$1</em>')
+    .replace(/\n/g, '<br>');
+}
+</script>
+</body>
+</html>
